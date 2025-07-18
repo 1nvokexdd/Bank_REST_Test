@@ -1,0 +1,806 @@
+openapi: 3.0.2
+info:
+  version: v1
+  title: Bank_REST
+  description: test task card rest app
+  contact:
+    name: Email
+    email: miskridevelop@gmail.com
+  license:
+    name: "ye"
+servers:
+  - url: http://localhost:8080
+    description: CARD API
+tags:
+  - name: Card Controller
+    description: CARD API
+  - name: User Controller
+    description: USER API
+  - name: Admin Controller
+    description: ADMIN API
+
+paths:
+  /transfer-between-cards:
+    post:
+      tags:
+        - User Controller
+      summary: Пользователь делает перевод между своими картами
+      operationId: transferMoneyBetweenCards
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferRequestDTO"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Карта не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                cardNotFound:
+                  value:
+                    code: "CARD_NOT_FOUND"
+                    message: "Card with number 1234 not found"
+                    timestamp: "2024-07-15T12:34:56.789Z"
+        "422":
+          description: Ошибка перевода средств
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                transferFailed:
+                  value:
+                    code: "CARD_TRANSFER_FAILED"
+                    message: "Insufficient funds for transfer"
+                    timestamp: "2024-07-15T12:35:10.123Z"
+
+  /sign-up:
+    post:
+      tags:
+        - User Controller
+      summary: Регистрация
+      operationId: signUp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignUpRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JwtAuthenticationResponse"
+        "400":
+          description: Ошибка валидации данных
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalErrorResponse"
+
+        "409":
+          description: Ошибка создания пользователя
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                userCreateFailed:
+                  value:
+                    code: "USER_ALREADY_EXIST"
+                    message: "User with this phone already exists"
+                    timestamp: "2024-07-15T12:39:50.123Z"
+
+  /sign-in:
+    post:
+      tags:
+        - User Controller
+      summary: Аутентификация
+      operationId: signIn
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignInRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JwtAuthenticationResponse"
+        "401":
+          description: Неавторизованный доступ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                authFailed:
+                  value:
+                    code: "AUTHENTICATION_FAILED"
+                    message: "Invalid credentials"
+                    timestamp: "2024-07-15T12:40:30.456Z"
+
+  /block-card-request/{cardId}:
+    post:
+      tags:
+        - User Controller
+      summary: Пользователь отправляет запрос на блокировку карты
+      operationId: blockCardRequest
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Ошибка запроса на блокировку
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                requestBlockFailed:
+                  value:
+                    code: "CARD_BLOCK_REQUEST_FAILED"
+                    message: "Block request already exists"
+                    timestamp: "2024-07-15T12:38:40.012Z"
+
+  /admin/reject/{cardId}:
+    post:
+      tags:
+        - Admin Controller
+      summary: Отказать в блокировке карты пользователю
+      operationId: rejectBlock
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+
+  /admin/create-card/{ownerId}:
+    post:
+      tags:
+        - Admin Controller
+      summary: Создать карту
+      operationId: createCard
+      parameters:
+        - name: ownerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "422":
+          description: Ошибка создания карты
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                createFailed:
+                  value:
+                    code: "CARD_CREATE_FAILED"
+                    message: "Invalid card type specified"
+                    timestamp: "2024-07-15T12:37:30.789Z"
+
+  /admin/block-card/{cardId}:
+    post:
+      tags:
+        - Admin Controller
+      summary: Заблокировать карту
+      operationId: blockCard
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+        "422":
+          description: Ошибка блокировки карты
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                blockFailed:
+                  value:
+                    code: "CARD_BLOCK_FAILED"
+                    message: "Card is already blocked"
+                    timestamp: "2024-07-15T12:36:20.456Z"
+
+  /admin/approve-block/{cardId}:
+    post:
+      tags:
+        - Admin Controller
+      summary: Заблокировать карту пользователю, который запросил блокировку карты
+      operationId: approveBlock
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+
+  /admin/add-ballance:
+    post:
+      tags:
+        - Admin Controller
+      summary: Добавить sum на карту
+      operationId: addMoneyOnCard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddBallanceRequestDTO"
+        required: true
+      responses:
+        "200":
+          description: OK
+
+  /admin/add-admin/{userId}:
+    post:
+      tags:
+        - Admin Controller
+      summary: Сделать другого пользователя админом
+      operationId: giveAdminRole
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /admin/activate-card/{cardId}:
+    post:
+      tags:
+        - Admin Controller
+      summary: Активировать карту
+      operationId: activateCard
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          description: "ID карты для активации"
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /get-decrypt-card-number/{cardId}:
+    get:
+      tags:
+        - User Controller
+      summary: Получить полный расшифрованный номер своей карты
+      operationId: getDecryptCardNumber
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Полный расшифрованный номер карты получен
+          content:
+            text/plain:
+              schema:
+                type: string
+        "403":
+          description: Пользователя не владеет этой картой
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                accessDenied:
+                  value:
+                    code: "USER_NOT_OWNS_THIS_CARD"
+                    message: "You don't have access to this card"
+                    timestamp: "2024-07-15T12:41:20.789Z"
+        "404":
+          description: Карта не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                cardNotFound:
+                  value:
+                    code: "CARD_NOT_FOUND"
+                    message: "Card not found"
+                    timestamp: "2024-07-15T12:42:10.123Z"
+
+  /check-ballance/{cardId}:
+    get:
+      tags:
+        - User Controller
+      summary: Получить баланс пользователя на определенной карте
+      operationId: getBallance
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: number
+        "404":
+          description: Карта не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cards:
+    get:
+      tags:
+        - User Controller
+      summary: Получить все карты пользователя
+      operationId: getUserCards
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedModelCardDto"
+
+  /card/{cardId}:
+    get:
+      tags:
+        - Card Controller
+      summary: Получить замаскированный номер карты
+      operationId: getCardNUmber
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Зашифрованный номер карты с 4 последними расшифрованными цифрами получен
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: Пользователя с таким id не существует
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/get-pending-block-cards:
+    get:
+      tags:
+        - Admin Controller
+      summary: Получить карты, пользователи которых запросили блокировку
+      operationId: getPendingBlockCards
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedModelCardDto"
+
+  /admin/get-decrypt-card-number/{cardId}:
+    get:
+      tags:
+        - Admin Controller
+      summary: Получить полный расшифрованный номер карты
+      operationId: getDecryptCardNumber_1
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Полный расшифрованный номер карты получен
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: Пользователя с таким id не существует
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/get-all-cards:
+    get:
+      tags:
+        - Admin Controller
+      summary: Получить все карты
+      operationId: getAllCards
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagedModelCardDto"
+
+  /admin/delete/{userId}:
+    delete:
+      tags:
+        - Admin Controller
+      summary: Удалить пользователя
+      operationId: deleteUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/delete-card/{cardId}:
+    delete:
+      tags:
+        - Admin Controller
+      summary: Удалить карту
+      operationId: deleteCard
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "201":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: Карта не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Код ошибки
+          enum:
+            - CARD_NOT_FOUND
+            - CARD_TRANSFER_FAILED
+            - CARD_BLOCK_FAILED
+            - CARD_CREATE_FAILED
+            - CARD_BLOCK_REQUEST_FAILED
+            - USER_NOT_FOUND
+            - USER_NOT_OWNS_THIS_CARD
+            - USER_ALREADY_EXIST
+            - AUTHENTICATION_FAILED
+            - VALIDATION_FAILED
+        message:
+          type: string
+          description: Сообщение об ошибке
+        timestamp:
+          type: string
+          format: date-time
+          description: Время возникновения ошибки
+      required:
+        - code
+        - message
+        - timestamp
+
+    GlobalErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: VALIDATION_FAILED
+        message:
+          type: string
+          description: Ошибка валидации данных
+        errors:
+          type: array
+          items:
+            type: string
+          description: Список ошибок валидации
+        timestamp:
+          type: string
+          format: date-time
+          description: Время возникновения ошибки
+      required:
+        - code
+        - message
+        - errors
+        - timestamp
+
+    TransferRequestDTO:
+      type: object
+      properties:
+        fromCardId:
+          type: integer
+          format: int64
+        toCardId:
+          type: integer
+          format: int64
+        sum:
+          type: number
+          minimum: 0.01
+      required:
+        - sum
+        - toCardId
+
+    SignUpRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          maxLength: 100
+          minLength: 2
+          pattern: ^[\\p{L} '-]+$
+        lastName:
+          type: string
+          maxLength: 100
+          minLength: 2
+          pattern: ^[\\p{L} '-]+$
+        phoneNumber:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          maxLength: 255
+          minLength: 8
+          pattern: ^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=\\S+$).{8,}$
+      required:
+        - firstName
+        - lastName
+        - password
+        - phoneNumber
+
+    JwtAuthenticationResponse:
+      type: object
+      properties:
+        token:
+          type: string
+
+    SignInRequest:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          maxLength: 255
+          minLength: 8
+          pattern: ^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=\S+$).{8,}$
+      required:
+        - password
+        - phoneNumber
+
+    Card:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        bin:
+          type: string
+        lastFour:
+          type: string
+        encryptedCardNumber:
+          type: string
+        cvv:
+          type: string
+        createDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - BLOCKED
+            - INACTIVE
+            - EXPIRED
+            - PENDING_BLOCK
+        ballance:
+          type: number
+        maskedNumber:
+          type: string
+
+    AddBallanceRequestDTO:
+      type: object
+      properties:
+        cardId:
+          type: integer
+          format: int64
+        sum:
+          type: number
+          minimum: 0.01
+      required:
+        - cardId
+        - sum
+
+    CardDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        bin:
+          type: string
+        lastFour:
+          type: string
+        cvv:
+          type: string
+        expirationDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - BLOCKED
+            - INACTIVE
+            - EXPIRED
+            - PENDING_BLOCK
+        ballance:
+          type: number
+
+    PageMetadata:
+      type: object
+      properties:
+        size:
+          type: integer
+          format: int64
+        number:
+          type: integer
+          format: int64
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int64
+
+    PagedModelCardDto:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/CardDto"
+        page:
+          $ref: "#/components/schemas/PageMetadata"

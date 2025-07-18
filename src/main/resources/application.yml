@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  liquibase:
+    enabled: true
+    change-log: db/db.changelog-master.yaml
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bank
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: postgres
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+token:
+  signing:
+    key: 53A73E3F1C4E0A2D3B5F2D084E6B1B423D6F247D1F6E5C9A596D635A75327855
+  expiration:
+    access: 86400000
+
+app:
+  admin:
+    phone: "+79991112234"
+
+jasypt:
+  encryptor:
+    password: qweqwe
+    algorithm: PBEWithHMACSHA512AndAES_256

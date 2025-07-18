@@ -1,0 +1,228 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.0-create-user-table
+      author: author
+      preConditions:
+        - not:
+            tableExists:
+              tableName: USER_TABLE
+        - dbms:
+            type: postgresql
+      changes:
+        - createTable:
+            tableName: USER_TABLE
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: first_name
+                  type: VARCHAR(255)
+              - column:
+                  name: last_name
+                  type: VARCHAR(255)
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: phone_number
+                  type: VARCHAR(255)
+              - column:
+                  name: role
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: USER_TABLE
+            indexName: idx_user_username
+            unique: true
+            columns:
+              - column:
+                  name: username
+
+  - changeSet:
+      id: v1.0-create-card-table
+      author: author
+      preConditions:
+        - not:
+            tableExists:
+              tableName: CARD_TABLE
+        - dbms:
+            type: postgresql
+      changes:
+        - createTable:
+            tableName: CARD_TABLE
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: bin
+                  type: VARCHAR(20)
+              - column:
+                  name: last_four
+                  type: VARCHAR(4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: encrypted_card_number
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cvv
+                  type: VARCHAR(10)
+              - column:
+                  name: create_date
+                  type: DATE
+                  defaultValueComputed: CURRENT_DATE
+              - column:
+                  name: expiration_date
+                  type: DATE
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+              - column:
+                  name: ballance
+                  type: DECIMAL(19, 2)
+                  defaultValueNumeric: 0
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: CARD_TABLE
+            baseColumnNames: user_id
+            constraintName: fk_card_user
+            referencedTableName: USER_TABLE
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - createIndex:
+            tableName: CARD_TABLE
+            indexName: idx_card_user
+            columns:
+              - column:
+                  name: user_id
+
+  - changeSet:
+      id: v1.0-create-demo-admin
+      author: author
+      preConditions:
+        - tableExists:
+            tableName: USER_TABLE
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM USER_TABLE WHERE username = 'user_ade1a2a6d161'
+
+      changes:
+        - insert:
+            tableName: USER_TABLE
+            columns:
+              - column:
+                  name: username
+                  value: "user_ade1a2a6d161"
+              - column:
+                  name: first_name
+                  value: "Admin"
+              - column:
+                  name: last_name
+                  value: "Ya"
+              - column:
+                  name: password
+                  value: "$2a$10$JqWhml.nylfbgvH8hx1f4.Ol/bjVgYjnELV.3/w8T1Dbkn6pCcZR2"
+              - column:
+                  name: phone_number
+                  value: "+79991112233"
+              - column:
+                  name: role
+                  value: "ROLE_ADMIN"
+  - changeSet:
+      id: v1.0-create-demo-user
+      author: author
+      preConditions:
+        - tableExists:
+            tableName: USER_TABLE
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM USER_TABLE WHERE username = 'user_4d2da13b7281'
+
+      changes:
+        - insert:
+            tableName: USER_TABLE
+            columns:
+              - column:
+                  name: username
+                  value: "user_4d2da13b7281"
+              - column:
+                  name: first_name
+                  value: "User"
+              - column:
+                  name: last_name
+                  value: "Ya"
+              - column:
+                  name: password
+                  value: "$2a$10$f9zglhY2TG.eGAOo15GDNewqiAvN8CxK.er2BtAeF61yVYYnlg9/C"
+              - column:
+                  name: phone_number
+                  value: "+79991112239"
+              - column:
+                  name: role
+                  value: "ROLE_USER"
+
+  - changeSet:
+      id: v1.0-create-demo-card
+      author: author
+      preConditions:
+        - tableExists:
+            tableName: CARD_TABLE
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM CARD_TABLE WHERE encrypted_card_number = 'DvMoZaRkLhme+YyXBsig4uWM5iSSoMLx8CJouDkkBhLmlu9n2r/HAInjnaPbSboqBkTjBM8YAYspf37RVvyXfw=='
+      changes:
+        - insert:
+            tableName: CARD_TABLE
+            columns:
+              - column:
+                  name: bin
+                  value: "491684"
+              - column:
+                  name: last_four
+                  value: "6486"
+              - column:
+                  name: encrypted_card_number
+                  value: "DvMoZaRkLhme+YyXBsig4uWM5iSSoMLx8CJouDkkBhLmlu9n2r/HAInjnaPbSboqBkTjBM8YAYspf37RVvyXfw=="
+              - column:
+                  name: cvv
+                  value: "589"
+              - column:
+                  name: create_date
+                  valueComputed: CURRENT_DATE
+              - column:
+                  name: expiration_date
+                  value: "2028-07-11"
+              - column:
+                  name: status
+                  value: "ACTIVE"
+              - column:
+                  name: ballance
+                  valueNumeric: 0.00
+              - column:
+                  name: user_id
+                  valueComputed: (SELECT id FROM USER_TABLE WHERE username = 'user_4d2da13b7281')
